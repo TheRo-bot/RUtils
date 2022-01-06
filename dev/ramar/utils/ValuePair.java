@@ -9,11 +9,11 @@ public class ValuePair<E, K>
     private WrappedLink<E, K> one = new WrappedLink<E, K>();
     private WrappedLink<K, E> two = new WrappedLink<K, E>();
 
-    public ValuePair(E one, K two)
+    public ValuePair(E a, K b)
     {
-        this.one.setValue(one);
+        this.one.setValue(a);
         this.one.setLink(this.two);
-        this.two.setValue(two);
+        this.two.setValue(b);
         this.two.setLink(this.one);
     }   
 
