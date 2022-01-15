@@ -1,6 +1,8 @@
 package dev.ramar.utils.nodes;
 
 
+import dev.ramar.utils.BaseListeners;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -11,8 +13,16 @@ Abstract Class: Node
 */
 public abstract class Node<E>
 {
+    public final ListenerContainer<E> listeners = new ListenerContainer<>();
 
-    public final ValueListeners<E> listeners = new ValueListeners<E>();
+    public static class ListenerContainer<F>
+    {
+        public final BaseListeners<LinkListener> links = new LinkListeners();
+        public final BaseListeners<ValueListener<F>> value = new ValueListeners<F>();
+    }
+
+
+
     protected E value;
 
     public Node(E value)
@@ -20,26 +30,36 @@ public abstract class Node<E>
         this.value = value;
     }
 
-
-    /*
-    Listening callback: onChange (ValueListeners)
-     - sends the signal to <listeners> to send a callback
+    /* Object-Only Listener methods 
+    --===------------------------------
     */
-    protected final void onChange(E value)
+
+    protected final void onChange_link(Node<E> from, Node<E> to)
     {
-        listeners.onChange(this, value);
+        ((LinkListeners)listeners.links).onChange(this, from, to);
     }
+
+
+    protected final void onChange_value(E from, E to)
+    {
+        ((ValueListeners<E>)listeners.value).onChange(from, to);
+    }
+
+
+
+    /* Accessors/Mutators for <value>
+    --===--------------------------------
+    */
 
     public final E getValue()
     {  return value;  }
 
     public final void setValue(E val)
     {
+        E old = this.value;
         this.value = val;
-        onChange(val);
+        onChange_value(old, val);
     }
-
-    public abstract List<Node<E>> getLinks();
 
     public Node<E> withValue(E val)
     {
@@ -47,61 +67,129 @@ public abstract class Node<E>
         return this;
     }
 
-    public abstract Node<E> getLink(int n);
 
-    public abstract Node<E> setLink(int i, E val);
+    /* Abstract related Methods
+    --==--------------------------
+    */
 
-    public abstract void setLink(int i, Node<E> val);
+    /* Get Methods
+    --===------------
+    */
 
-    public abstract Node<E> removeLink(int i);
+    public abstract Node<E> getLink(int i);
+    public abstract E get(int i);
+
+
+    /* Add Methods
+    --===------------
+    */
+
+    public abstract void addLink(Node<E> val);
+    public Node<E>   withAddLink(Node<E> node)
+    { addLink(node); return this; }
 
     public abstract Node<E> add(E val);
+    public Node<E>      withAdd(E val)
+    { add(val); return this; }
 
+
+    /* Remove Methods
+    --===-----------------
+    */
+
+    public abstract boolean removeLink(Node<E> n);
+    public abstract Node<E> remove(int i);
+
+
+    /* Set Methods
+    --===-------------
+    */
+
+    public abstract Node<E> setLink(int i, Node<E> val);
+    public Node<E>          withLink(int i, Node<E> val)
+    { setLink(i, val); return this; }
+
+    public abstract Node<E> set(int i, E val);
+
+
+    /* Utility Methods
+    --===-----------------
+    */
+
+    public abstract int size();
     public abstract void clear();
+    public abstract boolean isConnected(Node<E> to);
+    public abstract List<Node> getLinks();
 
-    public Node<E> withAdd(E val)
+    /*
+    Method: traverse
+     - traverses from this node the path.
+     - path format: 
+        "0,1,4" -> this.getLink(0).getLink(1).getLink(4)
+    */
+    public Node<E> traverse(String path)
     {
-        add(val);
-        return this;
+        if( path == null )
+            throw new NullPointerException();
+        String[] sections = path.split(",");
+
+        Node<E> curr = this;
+        for( String s : sections )
+        {
+            try
+            {
+                int i = Integer.parseInt(s);
+                if( curr != null )
+                    curr = curr.getLink(i);
+            }
+            catch(NumberFormatException e)
+            {
+                throw new IllegalArgumentException("path is not a comma separated sequence of integers ('" + s + "' is not an integer!");
+            }
+        }
+        return curr;
     }
 
 
-    protected abstract NodeBuilder getNodeBuilder();
-    static abstract class NodeBuilder<V>
+    /* Listening Classes
+    --===-------------------
+    */
+
+    public interface LinkListener<F>
     {
-        abstract Node<V> build(V val, Node... links);
+        // (basically i can't have new so ---->   old        new)
+        public void onChange(Node<F> who, Node<F> o, Node<F> n);
     }
 
-    public class ValueListeners<K>
+    public interface ValueListener<K>
     {
-        public interface ValueListener<K>
+        public void onChange(K from, K to);
+    }
+
+
+
+    private static class LinkListeners<F> extends BaseListeners<LinkListener<F>>
+    {
+        private void onChange(Node<F> owner, Node<F> from, Node<F> to)
         {
-            public void onChange(K val);
+            clean();
+            for( LinkListener<F> ll : listeners )
+                onChange(owner, from, to);
         }
+    }
 
-        private List<ValueListener<K>> listeners = new ArrayList<>();
 
-        private ValueListeners()
+    private static class ValueListeners<K> extends BaseListeners<ValueListener<K>>
+    {
+        private void onChange(K from, K to)
         {
-
-        }
-
-        public void add(ValueListener<K> vl)
-        {
-            listeners.add(vl);
-        }
-
-        public void remove(ValueListener<K> vl)
-        {
-            listeners.remove(vl);
-        }
-
-        private void onChange(K val)
-        {
+            clean();
+            
             for( ValueListener<K> listener : listeners )
-                listener.onChange(val);
+                listener.onChange(from, to);
         }
 
     } 
+
 
 }

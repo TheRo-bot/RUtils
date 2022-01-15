@@ -1,13 +1,18 @@
 package dev.ramar.utils.nodes;
 
-import dev.ramar.utils.nodes.Node.NodeBuilder;
-
 import java.util.List;
 import java.util.ArrayList;
 
 import java.util.Map;
 import java.util.HashMap;
 
+
+/*
+Node: DoubleNode
+ - a **NON DIRECTED** node with two links
+ - none of this front/back or next/prev shit. 
+   it's one/two baby.
+*/
 public class DoubleNode<E> extends Node<E>
 {
     private Node<E> one, two;
@@ -18,12 +23,14 @@ public class DoubleNode<E> extends Node<E>
         one = two = null;
     }
 
+
     public DoubleNode(E val, Node<E> one, Node<E> two)
     {
         super(val);
         this.one = one;
         this.two = two;
     }
+
 
     public String toString()
     {
@@ -41,113 +48,256 @@ public class DoubleNode<E> extends Node<E>
     }
 
 
+    public boolean equals(Object in)
+    {   
+        boolean isEqual = false;
+        if( in instanceof DoubleNode )
+        {
+            DoubleNode<E> n = (DoubleNode<E>)in;
 
-    public List<Node<E>> getLinks()
-    {
-        List<Node<E>> out = new ArrayList<>();
-        out.add(one);
-        out.add(two);
+            // if value == n.value == null is essentially
+            // the main case that matters here, but if they're
+            // identically similar, then yeah keep on going
+            if( ( value == n.value                       ) || 
+                ( value != null && value.equals(n.value) ) )
+            {
+                if( ( one == n.one      ) || 
+                    ( one.equals(n.one) ) )
+                {
+                    if( ( two == n.two      ) ||
+                        ( two.equals(n.two) ) )
+                    {
+                        isEqual = true;
+                    }
 
-        return out;
+                }
+            }
+        }
+
+        return isEqual;
     }
 
-    public Node<E> getLink(int n)
+
+
+    /* Get Methods
+    --===------------
+    */
+
+    public Node<E> getLink(int i)
     {
         Node<E> out = null;
-        if( n == 0 )
+        if( i == 0 )
             out = one;
-        else if( n == 1 )
+        else if( i == 1 )
             out = two;
         else
-            throw new IndexOutOfBoundsException(n + " must be in bounds (0:1)");
+            throw new IndexOutOfBoundsException(i + " must be in bounds (0:1)");
         return out;
     }
 
-    public Node<E> setLink(int i, E val)
+
+    public E get(int i)
     {
-        Node<E> out = null;
-        if( i == 0 )
+        Node<E> n = getLink(i);
+        return n != null ? n.getValue() : null;
+    }
+
+
+
+
+    /* Add Methods
+    --===------------
+    */
+
+    public void addLink(Node<E> node)
+    {
+        boolean shouldDo = one == null || two == null;
+
+        Node<E> old = null, out = null;
+
+        if( one == null )
         {
-            one = getNodeBuilder().build(val);
-            out = one;
+            old = one;
+            out = node;
+            one = out;
         }
-        else if( i == 1 )
+        else if( two == null )
         {
-            two = getNodeBuilder().build(val);
-            out = two;
+            old = two;
+            out = node;
+            two = out;
         }
         else
-            throw new IndexOutOfBoundsException(i + " must be in bounds (0:1)");
+            throw new IllegalStateException("Cannot add more than 2 nodes to a DoubleNode");
 
-        return out;
-    }
-
-    public void setLink(int i, Node<E> val)
-    {
-        if( i == 0 )
-            one = val;
-        else if( i == 1 )
-            two = val;
-        else
-            throw new IndexOutOfBoundsException(i + " must be in bounds (0:1)");
+        onChange_link(old, out);
     }
 
 
-    public Node<E> removeLink(int i)
-    {
-        Node<E> exp = null;
-        if( i == 0 )
-        {
-            exp = one;
-            one = null;
-        }
-        else if( i == 1 )
-        {
-            exp = two;
-            two = null;
-        } 
-        else
-            throw new IndexOutOfBoundsException(i + " must be in bounds (0:1)");
-        return exp;
-    }
-
-    public void clear()
-    {
-        one = two = null;
-    }
-
-
+    /*
+    Modifier: add
+     - We can't wrap add() in addLink() here since
+       we don't know where addLink() adds (assuming it does)
+       so basically just re-use the code  
+    */
     public Node<E> add(E val)
     {
         boolean shouldDo = one == null || two == null;
 
-        if(! shouldDo )
-            throw new IllegalStateException("Cannot add more than 2 nodes to a DoubleNode");
-
-        Node<E> n = getNodeBuilder().build(val);
+        Node<E> old = null, out = null;
 
         if( one == null )
-            one = n;
-        else
-            two = n;
-
-        return n;
-    }
-
-    protected NodeBuilder getNodeBuilder()
-    {
-        return new DoubleNodeBuilder();
-    }
-
-
-    protected static class DoubleNodeBuilder<V> extends NodeBuilder<V>
-    {
-        protected DoubleNodeBuilder()
         {
+            old = one;
+            out = getNodeBuilder().build(val);
+            one = out;
+        }
+        else if( two == null )
+        {
+            old = two;
+            out = getNodeBuilder().build(val);
+            two = out;
+        }
+        else
+            throw new IllegalStateException("Cannot add more than 2 nodes to a DoubleNode");
 
+        onChange_link(old, out);
+
+        return out;
+    }
+
+
+    /* Remove Methods
+    --===-----------------
+    */
+
+    public boolean removeLink(Node<E> n)
+    {
+        boolean removed = false;
+        if( one != null && one.equals(n) )
+        {
+            one = null;
+            onChange_link(n, null);
+            removed = true;
+        }
+        else if( two != null && two.equals(n) )
+        {
+            two = null;
+            onChange_link(n, null);
+            removed = true;
         }
 
-        Node<V> build(V val, Node... links)
+        return removed;
+    }
+
+
+    public Node<E> remove(int i)
+    {
+        Node<E> old;
+        if( i == 0 )
+        {
+            old = one;
+            one = null;
+        }
+        else if( i == 1 )
+        {
+            old = two;
+            two = null;
+        }
+        else
+            throw new IndexOutOfBoundsException(i + " must be in bounds (0:1)");
+
+        onChange_link(old, null);
+        return old;
+    }
+
+
+
+
+    /* Set Methods
+    --===-------------
+     - the returned Node<E> is the node already at <i>
+    */
+
+    public Node<E> setLink(int i, Node<E> val)
+    {
+        Node<E> replaced;
+        if( i == 0 )
+        {
+            replaced = one;
+            one = val;
+        }
+        else if( i == 1 )
+        {
+            replaced = two;
+            two = val;
+        }
+        else
+            throw new IndexOutOfBoundsException(i + " must be in bounds (0:1)");
+
+        onChange_link(replaced, val);
+
+        return replaced;
+    }
+
+    public Node<E> set(int i, E val)
+    {
+        return setLink(i, getNodeBuilder().build(val));
+    }
+
+
+    /* Utility Methods
+    --===-----------------
+    */
+
+    public int size()
+    {
+        return 0 + (one != null ? 1 : 0) + (two != null ? 1 : 0);
+    }
+
+
+    public void clear()
+    {
+        Node<E> oOne = one,
+                oTwo = two;
+
+        onChange_link(oOne, null);
+        onChange_link(oTwo, null);
+    }
+
+
+    public boolean isConnected(Node<E> to)
+    {
+        return (one != null && one.equals(to)) || 
+               (two != null && two.equals(to)) ; 
+    }
+
+
+
+    public List<Node> getLinks()
+    {
+        ArrayList<Node> out = new ArrayList<>();
+        if( one != null )
+            out.add(one);
+        if( two != null )
+            out.add(two);
+        
+        return out;
+    }
+
+
+
+
+    protected DoubleNodeBuilder<E> getNodeBuilder()
+    {   return new DoubleNodeBuilder<E>();  }
+
+    /*
+    NodeBuilder: DoubleNodeBuilder
+     - Builds DoubleNodes
+    */
+    protected static class DoubleNodeBuilder<V>
+    {
+        protected Node<V> build(V val, Node... links)
         {
             DoubleNode<V> dn = new DoubleNode(val);
 
@@ -259,7 +409,7 @@ public class DoubleNode<E> extends Node<E>
                     boolean check1 = n2 == n1.getLink(0);
 
                     // once we remove n2 (as it's link 0)
-                    n1.removeLink(0);
+                    n1.remove(0);
 
                     // we want to validate that getLink shows null
                     boolean check2 = n1.getLink(0) == null;
@@ -283,13 +433,53 @@ public class DoubleNode<E> extends Node<E>
                     listenerCheck = false;
                     final String toChange = "2";
                     DoubleNode<String> n1 = new DoubleNode<>("1");
-                    n1.listeners.add((String val) ->
+                    n1.listeners.value.add((String from, String to) ->
                     {
-                        listenerCheck = toChange.equals(val);
+                        listenerCheck = toChange.equals(to);
                     }); 
                     n1.setValue(toChange);
 
                     return listenerCheck;
+                }
+            });
+
+            /*
+            Test: equality
+             - tests that two nodes are equal/inequal in all cases
+            */
+            addTest(new Test()
+            {
+                public String getName() { return "equality"; }
+
+                public boolean start()
+                {
+                    DoubleNode<String> n1 = new DoubleNode<>("1");
+                    DoubleNode<String> n2 = new DoubleNode<>("1");
+                    // equal
+                    boolean check1 = n1.equals(n2);
+
+                    DoubleNode<String> n3 = new DoubleNode<>("2");
+                    // inequal
+                    boolean check2 = ! n1.equals(n3);
+
+                    n1.setLink(0, n2);
+                    n2.setLink(0, n2);
+                    // equal
+                    boolean check3 = n1.equals(n2);
+
+                    n1.setValue(null);
+                    boolean check4 = !n1.equals(n2);
+
+                    n2.setValue(null);
+                    n1.setValue("1");
+                    boolean check5 = !n1.equals(n2);
+
+                    n1.setLink(1, n1);
+                    // inequal
+                    boolean check6 = !n1.equals(n2);
+
+
+                    return check1 && check2 && check3 && check4 && check5;
                 }
             });
         }   
@@ -304,6 +494,11 @@ public class DoubleNode<E> extends Node<E>
                 {
                     passed = t.start();
                 }
+                catch(Exception e) 
+                {
+                    System.out.println("Fatal exception occurred mid test!");
+                    e.printStackTrace();
+                }
                 finally
                 {
                     newMap.put(t, passed);
@@ -317,7 +512,7 @@ public class DoubleNode<E> extends Node<E>
 
         private void outputResults()
         {
-            System.out.println("\nTest results:");
+            System.out.println("\nDoubleNode Test results:");
 
             String[] messages = new String[testsPassed.size()];
 

@@ -3,8 +3,6 @@ package dev.ramar.utils.nodes;
 import java.util.List;
 import java.util.ArrayList;
 
-import dev.ramar.utils.nodes.Node.NodeBuilder;
-
 
 /*
 Node: SingleNode
@@ -27,6 +25,7 @@ public class SingleNode<E> extends Node<E>
         this.link = link;
     }
 
+
     public String toString()
     {
         String out = "";
@@ -39,21 +38,30 @@ public class SingleNode<E> extends Node<E>
         return out;
     }
 
-    public Node<E> add(E val)
-    {
-        if( link != null )
-            throw new IllegalStateException("node limit reached");
 
-        link = getNodeBuilder().build(val);
-        return link;
+    public boolean equals(Object in)
+    {
+        // a **classic** curtin equals(Object) certified method
+        boolean isEqual = false;
+        if( in != null && in instanceof SingleNode )
+        {
+            SingleNode<E> sn = (SingleNode<E>)in;
+
+            isEqual = 
+            (
+                ( value == null && sn.value == null       ) ||
+                ( value != null && value.equals(sn.value) )
+            ) &&
+            (
+                ( link == null && sn.link == null      ) ||
+                ( link != null && link.equals(sn.link) )
+            );
+        }
+
+        return isEqual;
     }
 
-    public List<Node<E>> getLinks()
-    {
-        ArrayList<Node<E>> exp = new ArrayList<>();
-        exp.add(link);
-        return exp;
-    }
+
 
     public Node<E> getLink(int n)
     {
@@ -62,31 +70,91 @@ public class SingleNode<E> extends Node<E>
         return link;
     }
 
-    public Node<E> setLink(int i, E val)
-    {
-        if( i != 0 )
-            throw new IndexOutOfBoundsException();
 
-        link = getNodeBuilder().build(val);
+    public E get(int i)
+    {
+        Node<E> link = getLink(i);
+    
+        return link != null ? link.getValue() : null;        
+    }
+
+
+    /* Add Methods
+    --===------------
+    */
+
+    public void addLink(Node<E> val)
+    {
+        if( link == null )
+        {
+            link = val;        
+            onChange_link(null, link);
+        }
+    }
+
+    public Node<E> add(E val)
+    {
+        addLink(getNodeBuilder().build(val));
         return link;
     }
 
-    public void setLink(int i, Node<E> val)
-    {
-        if( i != 0 )
-            throw new IndexOutOfBoundsException();
+    /* Remove Methods
+    --===-----------------
+    */
 
-        link = val;
+    public boolean removeLink(Node<E> n)
+    {
+        boolean done = false;
+        if( link != null && link.equals(link) )
+        {
+            link = null;
+            done = true;
+        }
+        return done;
     }
 
-    public Node<E> removeLink(int i)
+    public Node<E> remove(int i)
     {
         if( i != 0 )
             throw new IndexOutOfBoundsException();
 
         Node<E> saved = link;
         link = null;
+
+        onChange_link(saved, null);
+
         return saved;
+    }
+
+
+    /* Set Methods
+    --===-------------
+    */
+
+    public Node<E> setLink(int i, Node<E> node)
+    {
+        if( i != 0 )
+            throw new IndexOutOfBoundsException();
+
+        Node<E> oldLink = link;
+        link = node;
+        onChange_link(oldLink, link);
+        return oldLink;
+    }
+
+    public Node<E> set(int i, E val)
+    {
+        setLink(i, getNodeBuilder().build(val));
+        return link;
+    }
+
+    /* Utility Methods
+    --===-----------------
+    */
+
+    public int size()
+    {
+        return link != null ? 1 : 0;
     }
 
 
@@ -96,8 +164,29 @@ public class SingleNode<E> extends Node<E>
     }
 
 
+    public boolean isConnected(Node<E> n)
+    {
+        return link != null && link.equals(n);
+    }
 
-    protected static class SingleNodeBuilder<V> extends NodeBuilder<V>
+
+    public List<Node> getLinks()
+    {
+        ArrayList<Node> out = new ArrayList<>();
+        if( link != null )
+            out.add(link);
+        
+        return out;
+    }
+
+
+
+    /* Node Builder
+    --===-------------
+    */  
+
+
+    protected static class SingleNodeBuilder<V extends Object>
     {
         protected SingleNodeBuilder()
         {
@@ -119,9 +208,9 @@ public class SingleNode<E> extends Node<E>
     }
 
 
-    public Node.NodeBuilder getNodeBuilder()
+    public SingleNodeBuilder<E> getNodeBuilder()
     {
-        return new SingleNodeBuilder();
+        return new SingleNodeBuilder<E>();
     }
 
 
