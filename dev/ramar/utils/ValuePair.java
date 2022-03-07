@@ -31,13 +31,13 @@ public class ValuePair<E, K>
 
     public E getOneVal()
     {
-        return this.one.getValue();
+        return this.one.getVal();
     }
 
 
     public K getTwoVal()
     {
-        return this.two.getValue();
+        return this.two.getVal();
     }
 
 

@@ -18,12 +18,11 @@ public class WrappedLink<E, K>
         value = val;
     }
 
-
     /* Accessors
     -==------------
     */
 
-    public E getValue()
+    public E getVal()
     {
         return value;
     }
@@ -52,10 +51,22 @@ public class WrappedLink<E, K>
         value = val;
     }
 
+    public WrappedLink<E, K> withValue(E val)
+    {
+        setValue(val);
+        return this;
+    }
+
 
     public void setLink(WrappedLink<K, ?> link)
     {
         this.link = link;
+    }
+
+    public WrappedLink<E, K> withLink(WrappedLink<K, ?> link)
+    {
+        setLink(link);
+        return this;
     }
 
 
