@@ -41,34 +41,39 @@ public class HiddenList<E>
     --===---------
     */
 
-    public void add(E e)
+    public HiddenList<E> add(E... es)
     {
         synchronized(this)
         {
-            list.add(e);
+            for( E e : es)
+                list.add(e);
         }
+        return this;
     }
 
-    public void remove(E e)
+    public boolean remove(E e)
     {
         synchronized(this)
         {
-            list.remove(e);
+            return list.remove(e);
         }
     }
 
-    public void remove(int i)
+    public E remove(int i)
     {
         synchronized(this)
         {
-            list.remove(i);
+            return list.remove(i);
         }
     }
 
-    public void removeAll(E... toRemove)
+    public void remove(E... toRemove)
     {
-        for( E e : toRemove )
-            remove(e);
+        synchronized(this)
+        {
+            for( E e : toRemove )
+                remove(e);
+        }
     }
 
 }

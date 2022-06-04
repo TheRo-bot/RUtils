@@ -172,7 +172,6 @@ public abstract class Node<E>
     {
         private void onChange(Node<F> owner, Node<F> from, Node<F> to)
         {
-            clean();
             for( LinkListener<F> ll : listeners )
                 onChange(owner, from, to);
         }
@@ -183,8 +182,6 @@ public abstract class Node<E>
     {
         private void onChange(K from, K to)
         {
-            clean();
-            
             for( ValueListener<K> listener : listeners )
                 listener.onChange(from, to);
         }

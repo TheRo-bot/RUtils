@@ -131,6 +131,22 @@ public class DiGraph<E> implements Iterable<E>
         return nodes.containsKey(val);
     }
 
+    public boolean contains(Node<E> node)
+    {
+        boolean out = false;
+
+        if( node != null )
+            out = this.contains(node.getValue());
+
+        return out;
+    }
+
+
+    public void clear()
+    {
+        nodes.clear();
+    }
+
     /* Testing
     -===---------
     */
