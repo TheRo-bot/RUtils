@@ -1,0 +1,15 @@
+{
+	"version": "0.0.1",
+	"repository": "https://github.com/TheRo-bot/Rutils/",
+	"branch": "main",
+	"mainClass": null,
+	"author": "ramar",
+	
+	"toCompile": [
+		"dev.ramar.utils.*",
+		"dev.ramar.utils.list.*",
+		"dev.ramar.utils.lists.*",
+		"dev.ramar.utils.nodes.*",
+		"dev.ramar.utils.interfaces.*"
+	]
+}
